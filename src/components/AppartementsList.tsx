@@ -490,6 +490,57 @@ export default function AppartementsList({ agents, onUpdate }: AppartementsListP
                       </div>
                     ))}
                   </div>
+
+                  <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+                    {[
+                      {
+                        label: 'Logements assignés',
+                        value: group.appartements.length,
+                        suffix: '',
+                        format: (val: number) => val.toString(),
+                      },
+                      {
+                        label: 'Total lits',
+                        value: group.appartements.reduce(
+                          (sum, appt) => sum + appt.nombre_chambres,
+                          0
+                        ),
+                        suffix: ' lits',
+                        format: (val: number) => val.toFixed(0),
+                      },
+                      {
+                        label: 'Surface cumulée',
+                        value: group.appartements.reduce(
+                          (sum, appt) => sum + appt.surface,
+                          0
+                        ),
+                        suffix: ' m²',
+                        format: (val: number) => val.toFixed(1),
+                      },
+                      {
+                        label: 'Distance totale',
+                        value: group.appartements.reduce(
+                          (sum, appt) => sum + appt.distance_base,
+                          0
+                        ),
+                        suffix: ' km',
+                        format: (val: number) => val.toFixed(1),
+                      },
+                    ].map((metric) => (
+                      <div
+                        key={`${group.agentId}-${metric.label}`}
+                        className="bg-white border border-blue-100 rounded-lg p-3 flex flex-col"
+                      >
+                        <span className="text-xs uppercase tracking-wide text-blue-500">
+                          {metric.label}
+                        </span>
+                        <span className="text-lg font-semibold text-blue-900">
+                          {metric.format(metric.value)}
+                          {metric.suffix}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               ))}
             </div>
