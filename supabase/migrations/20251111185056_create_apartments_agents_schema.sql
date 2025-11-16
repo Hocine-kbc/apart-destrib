@@ -55,6 +55,8 @@ CREATE TABLE IF NOT EXISTS appartements (
   nombre_chambres integer NOT NULL,
   surface decimal(10,2) NOT NULL,
   distance_base decimal(10,2) NOT NULL,
+  latitude decimal(9,6),
+  longitude decimal(9,6),
   difficulte integer DEFAULT 3 CHECK (difficulte BETWEEN 1 AND 5),
   agent_id uuid REFERENCES agents(id) ON DELETE SET NULL,
   statut text DEFAULT 'disponible' CHECK (statut IN ('disponible', 'assigne', 'inactif')),

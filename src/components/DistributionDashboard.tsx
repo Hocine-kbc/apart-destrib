@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
-import { BarChart3, TrendingUp, Users, Home } from 'lucide-react';
+import { BarChart3, TrendingUp, Users, Home, Route } from 'lucide-react';
 import { supabase, type Agent, type Appartement } from '../lib/supabase';
 import {
   calculateAgentScores,
   calculateEquilibreGlobal,
+  buildAgentRoute,
+  type AgentRoute,
   type DistributionScore,
   type AppartementWithAgent,
 } from '../lib/distributionAlgorithm';
@@ -17,6 +19,7 @@ export default function DistributionDashboard({ agents, refresh }: DistributionD
   const [appartements, setAppartements] = useState<AppartementWithAgent[]>([]);
   const [scores, setScores] = useState<Map<string, DistributionScore>>(new Map());
   const [equilibreGlobal, setEquilibreGlobal] = useState(0);
+  const [routes, setRoutes] = useState<Map<string, AgentRoute>>(new Map());
 
   useEffect(() => {
     loadData();
@@ -30,9 +33,26 @@ export default function DistributionDashboard({ agents, refresh }: DistributionD
 
     if (!error && data) {
       setAppartements(data);
+
       const calculatedScores = calculateAgentScores(agents, data);
       setScores(calculatedScores);
       setEquilibreGlobal(calculateEquilibreGlobal(calculatedScores));
+
+      const routesMap = new Map<string, AgentRoute>();
+      agents.forEach((agent) => {
+        const apptsForAgent = data.filter(
+          (appt) =>
+            appt.agent_id === agent.id &&
+            appt.latitude !== null &&
+            appt.longitude !== null
+        );
+
+        if (apptsForAgent.length > 0) {
+          const route = buildAgentRoute(agent.id, apptsForAgent);
+          routesMap.set(agent.id, route);
+        }
+      });
+      setRoutes(routesMap);
     }
   }
 
@@ -150,6 +170,19 @@ export default function DistributionDashboard({ agents, refresh }: DistributionD
                     <div>
                       <span className="font-medium">{score.total_difficulte}</span> difficulté
                     </div>
+                  </div>
+
+                  <div className="mt-1 flex items-center gap-2 text-xs text-blue-700">
+                    <Route size={14} className="text-blue-500" />
+                    <span>
+                      Tournée estimée:{' '}
+                      <span className="font-semibold">
+                        {routes.get(score.agent_id)?.totalDistance.toFixed(1) ?? '0.0'} km
+                      </span>
+                      {routes.get(score.agent_id)?.etapes.length
+                        ? ` (${routes.get(score.agent_id)?.etapes.length} étapes)`
+                        : ' (coordonnées manquantes pour calcul précis)'}
+                    </span>
                   </div>
                 </div>
               );

@@ -22,6 +22,8 @@ export type Appartement = {
   nombre_chambres: number;
   surface: number;
   distance_base: number;
+  latitude: number | null;
+  longitude: number | null;
   difficulte: number;
   agent_id: string | null;
   statut: 'disponible' | 'assigne' | 'inactif';

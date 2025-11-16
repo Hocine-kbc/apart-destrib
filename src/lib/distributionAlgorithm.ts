@@ -14,6 +14,105 @@ export type DistributionScore = {
   score_equilibre: number;
 };
 
+export type AgentRouteStep = {
+  appartement: Appartement;
+  ordre: number;
+  distanceDepuisPrecedent: number;
+};
+
+export type AgentRoute = {
+  agentId: string;
+  totalDistance: number;
+  etapes: AgentRouteStep[];
+};
+
+export function calculateDistanceKm(
+  a: { latitude: number; longitude: number },
+  b: { latitude: number; longitude: number }
+): number {
+  const R = 6371;
+  const dLat = ((b.latitude - a.latitude) * Math.PI) / 180;
+  const dLng = ((b.longitude - a.longitude) * Math.PI) / 180;
+  const lat1 = (a.latitude * Math.PI) / 180;
+  const lat2 = (b.latitude * Math.PI) / 180;
+
+  const x =
+    Math.sin(dLat / 2) ** 2 +
+    Math.sin(dLng / 2) ** 2 * Math.cos(lat1) * Math.cos(lat2);
+  const c = 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
+  return R * c;
+}
+
+export function buildAgentRoute(
+  agentId: string,
+  appartements: Appartement[],
+  base?: {
+    latitude: number;
+    longitude: number;
+  }
+): AgentRoute {
+  const visitables = appartements.filter(
+    (a) => a.latitude !== null && a.longitude !== null
+  );
+
+  if (visitables.length === 0) {
+    return { agentId, totalDistance: 0, etapes: [] };
+  }
+
+  const remaining = [...visitables];
+  const etapes: AgentRouteStep[] = [];
+  let totalDistance = 0;
+
+  let currentPoint:
+    | { latitude: number; longitude: number }
+    | null = base ?? null;
+
+  let ordre = 1;
+
+  while (remaining.length > 0) {
+    let bestIndex = 0;
+    let bestDistance = Infinity;
+
+    remaining.forEach((appt, index) => {
+      const point = { latitude: appt.latitude!, longitude: appt.longitude! };
+      let d = 0;
+
+      if (currentPoint) {
+        d = calculateDistanceKm(currentPoint, point);
+      }
+
+      if (d < bestDistance) {
+        bestDistance = d;
+        bestIndex = index;
+      }
+    });
+
+    const next = remaining.splice(bestIndex, 1)[0];
+    totalDistance += currentPoint
+      ? calculateDistanceKm(
+          currentPoint,
+          { latitude: next.latitude!, longitude: next.longitude! }
+        )
+      : 0;
+
+    etapes.push({
+      appartement: next,
+      ordre,
+      distanceDepuisPrecedent: currentPoint
+        ? calculateDistanceKm(
+            currentPoint,
+            { latitude: next.latitude!, longitude: next.longitude! }
+          )
+        : 0,
+    });
+
+    currentPoint = { latitude: next.latitude!, longitude: next.longitude! };
+    ordre += 1;
+  }
+
+  return { agentId, totalDistance, etapes };
+}
+
 export function calculateWorkloadScore(appartement: Appartement): number {
   const chambreWeight = 10;
   const surfaceWeight = 0.5;
